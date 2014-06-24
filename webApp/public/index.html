@@ -1,0 +1,53 @@
+<head>
+    <script src="/socket.io/socket.io.js"></script>
+    
+    <script>
+        // http://www.html5rocks.com/en/tutorials/webaudio/intro/
+        var audio = new webkitAudioContext();
+        //var audio = new AudioContext();
+        var socket = io.connect('/');
+        
+        socket.on('cmd', function (data) {
+            playSound( soundBuffer[data] );
+        });
+        
+        var soundBuffer = []
+        
+        function loadSound(path,n) {
+            var request = new XMLHttpRequest();
+            request.open('GET', "/audio-dtmf/" + path);
+            request.responseType = 'arraybuffer';
+            
+            request.onload = function() {
+                console.log("Loading", path, " into:", n, request.response)
+                audio.decodeAudioData(request.response, function(buffer) {
+                    soundBuffer[n] = buffer;
+                });
+            }
+            
+            request.send();
+        }
+        
+        function playSound(buffer) {
+          var source = audio.createBufferSource(); // creates a sound source
+          source.buffer = buffer;                    // tell the source which sound to play
+          source.connect(audio.destination);       // connect the source to the context's destination (the speakers)
+          source.start(0);                           // play the source now                                        
+        }
+
+        function init() {
+            for (var i=0; i < 10; i++) {
+                loadSound("Dtmf-" + i + ".wav",i);
+            }
+        }
+        
+        function beep() {
+            playSound( soundBuffer[1]);
+        }
+        
+    </script>
+</head>
+
+<body onload=init()>
+    <button onclick="beep()"></button>
+</body>
